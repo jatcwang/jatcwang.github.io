@@ -1,0 +1,14 @@
+.highlight pre {
+  color: inherit;
+  background-color: initial;
+  border: none;
+  font-weight: bold;
+}
+
+.item-tag {
+  font-weight: bold;
+}
+
+ul.navbar-nav li:first-child {
+  font-weight: bold;
+}

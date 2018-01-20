@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>https://jatcwang.github.io/posts/2016-03-25-scala-after-6-months/</loc>
+    <lastmod>2016-03-28T21:59:18+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://jatcwang.github.io/posts/scala-monad-transformers-by-example/</loc>
+    <lastmod>2016-03-12T21:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://jatcwang.github.io/</loc>
+    <lastmod>2016-03-28T21:59:18+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://jatcwang.github.io/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://jatcwang.github.io/tags/monad-transformers/</loc>
+    <lastmod>2016-03-12T21:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://jatcwang.github.io/posts/</loc>
+    <lastmod>2016-03-28T21:59:18+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://jatcwang.github.io/tags/scala/</loc>
+    <lastmod>2016-03-28T21:59:18+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://jatcwang.github.io/tags/</loc>
+    <lastmod>2016-03-12T21:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+</urlset>

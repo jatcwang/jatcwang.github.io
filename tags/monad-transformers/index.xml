@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Monad Transformers on Almost Functional</title>
+    <link>https://jatcwang.github.io/tags/monad-transformers/</link>
+    <description>Recent content in Monad Transformers on Almost Functional</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>&amp;copy; All rights reserved.</copyright>
+    <lastBuildDate>Sat, 12 Mar 2016 21:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://jatcwang.github.io/tags/monad-transformers/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Scala - From Monads to Monad Transformers by Example</title>
+      <link>https://jatcwang.github.io/posts/scala-monad-transformers-by-example/</link>
+      <pubDate>Sat, 12 Mar 2016 21:00:00 +0000</pubDate>
+      
+      <guid>https://jatcwang.github.io/posts/scala-monad-transformers-by-example/</guid>
+      <description>Scalaz&amp;rsquo;s \/ (&amp;ldquo;Disjunction&amp;rdquo; or &amp;ldquo;Either&amp;rdquo;) and Scala&amp;rsquo;s Future are great examples of how the monad abstraction can be used to simplify logic. In this post we will be looking at why we need to compose monads, how to do it (hint: with Monad Transformers), and how they can significnatly simplify our code.
+The post is targetted at Scala beginners like myself who has just started to dabble with the functional side of Scala.</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+        <link rel="stylesheet" href="https://jatcwang.github.io/css/tomorrownight80s.css"><link rel="stylesheet" href="https://jatcwang.github.io/css/overrides.css">
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Scala - From Monads to Monad Transformers by Example</title>
+        <style>
+
+    html body {
+        font-family: 'Arial', sans-serif;
+        background-color: white;
+    }
+
+    :root {
+        --accent: #2f4490;
+        --border-width:  5px ;
+    }
+
+</style>
+
+
+<link rel="stylesheet" href="https://jatcwang.github.io//css/main.css">
+
+
+
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arial">
+
+
+
+
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+ 
+
+
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+
+<script>$(document).on('click', function() { $('.collapse').collapse('hide'); })</script>
+ <meta name="generator" content="Hugo 0.32.4" />
+        
+        
+        
+    </head>
+
+    
+    <script type="text/javascript" async
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script>
+
+    <body>
+         
+        <nav class="navbar navbar-default navbar-fixed-top">
+
+            <div class="container">
+
+                <div class="navbar-header">
+
+                    <a class="navbar-brand visible-xs" href="#">Scala - From Monads to Monad Transformers by Example</a>
+
+                    <button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+
+                </div>
+
+                <div class="collapse navbar-collapse">
+
+                    
+                        <ul class="nav navbar-nav">
+                            
+                                <li><a href="/">Almost Functional</a></li>
+                            
+                                <li><a href="/posts/">Posts</a></li>
+                            
+                        </ul>
+                    
+
+                    
+                        <ul class="nav navbar-nav navbar-right">
+                            
+                                <li class="navbar-icon"><a href="https://github.com/jatcwang/"><i class="fa fa-github"></i></a></li>
+                            
+                                <li class="navbar-icon"><a href="mailto:jatcwang@gmail.com"><i class="fa fa-envelope-o"></i></a></li>
+                            
+                                <li class="navbar-icon"><a href="https://twitter.com/jatcwang/"><i class="fa fa-twitter"></i></a></li>
+                            
+                        </ul>
+                    
+
+                </div>
+
+            </div>
+
+        </nav>
+
+
+<main>
+
+    <div class="item">
+
+    
+    
+    
+
+    
+    
+
+    <h2><a href="/posts/scala-monad-transformers-by-example/">Scala - From Monads to Monad Transformers by Example</a></h2>
+    <h5>March 12, 2016</h5>
+    
+    <a href="https://jatcwang.github.io/tags/scala"><kbd class="item-tag">Scala</kbd></a>
+    
+    <a href="https://jatcwang.github.io/tags/monad-transformers"><kbd class="item-tag">Monad Transformers</kbd></a>
+    
+
+</div>
+
+
+    <br> <div class="text-justify">
+
+<p>Scalaz&rsquo;s <code>\/</code> (&ldquo;Disjunction&rdquo; or &ldquo;Either&rdquo;) and Scala&rsquo;s Future are great examples of how the monad
+abstraction can be used to simplify logic. In this post we will be looking at why we need to compose
+monads, how to do it (hint: with <em>Monad Transformers</em>), and how they can significnatly simplify our code.</p>
+
+<p>The post is targetted at Scala beginners like myself who has just started to dabble with the functional
+side of Scala. I will be focusing more on practical examples to show how to use monad transformers.
+I will be using Scalaz&rsquo;s <code>\/</code> and Scala&rsquo;s <code>Future</code> (<code>scala.concurrent.Future</code>)</p>
+
+<p>Note that Scala&rsquo;s standard library has an <code>Either</code> type as well but if you see mentions of &ldquo;Either&rdquo;,
+I am talking about Scalaz&rsquo;s <code>\/</code></p>
+
+<h2 id="backstory-parcel-mega-corp">Backstory - Parcel Mega Corp</h2>
+
+<p><strong>Parcel Mega Corp</strong> is a company that makes parcels. Each <code>Parcel</code> needs to have a <code>name</code>,
+<code>address</code> and <code>mobileNumber</code> field, for obvious reasons.</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">case</span> <span class="k">class</span> <span class="nc">User</span><span class="o">(</span><span class="n">userId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Parcel</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">address</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">mobileNumber</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span>
+</code></pre></div>
+
+<h2 id="scalaz-disjunction">Scalaz Disjunction (<code>\/</code>)</h2>
+
+<p>With <code>\/</code>, you can model <em>shortcircuiting</em> when an error happens during your chain of operations, without the need for explicit error checks.</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">def</span> <span class="n">makeParcel</span><span class="o">(</span><span class="n">userId</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">\/</span><span class="o">[</span><span class="kt">SendParcelError</span>, <span class="kt">Parcel</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="k">for</span> <span class="o">{</span>
+      <span class="n">user</span> <span class="k">&lt;-</span> <span class="n">getUser</span><span class="o">(</span><span class="n">userId</span><span class="o">)</span>
+      <span class="n">address</span> <span class="k">&lt;-</span> <span class="n">getAddress</span><span class="o">(</span><span class="n">user</span><span class="o">)</span>
+      <span class="n">mobileNumber</span> <span class="k">&lt;-</span> <span class="n">getMobileNumber</span><span class="o">(</span><span class="n">user</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">yield</span> <span class="nc">Parcel</span><span class="o">(</span><span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="o">,</span> <span class="n">address</span><span class="o">,</span> <span class="n">mobileNumber</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div>
+
+<p>In the above example, <code>getUser</code>, <code>getAddress</code> and <code>getMobileNumber</code> have the type <code>\/[SendParcelError, X]</code>, but the code doesn&rsquo;t need to explicitly
+check the result of each call because the monad bind (flatmap) for <code>\/</code> handles them for us.
+If <code>getUser</code> fails with a <code>UserNotFound</code> error, the whole result of <code>makeParcel</code> function will be <code>-\/(UserNotFound)</code></p>
+
+<h2 id="scala-future">Scala Future</h2>
+
+<p>With <code>Future</code>, you can write your asynchronous code in a synchronous manner, though the code
+actually runs in a non-blocking, asynchronous manner.</p>
+
+<p>Let&rsquo;s pretend for a bit that our previous code example is fetching user/address/mobile number information
+from remote servers, and it <strong>cannot</strong> fail (barring unexpected exceptions which is handled upstream).
+You can have some code that looks almost the same. (I have put some type annotations in
+so you won&rsquo;t be confused)</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">def</span> <span class="n">makeParcel</span><span class="o">(</span><span class="n">userId</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Parcel</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="k">for</span> <span class="o">{</span>
+    <span class="n">user</span> <span class="k">&lt;-</span> <span class="n">getUser</span><span class="o">(</span><span class="n">userId</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">User</span><span class="o">]</span>
+    <span class="n">address</span> <span class="k">&lt;-</span> <span class="n">getAddress</span><span class="o">(</span><span class="n">user</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span>
+    <span class="n">mobileNumber</span> <span class="k">&lt;-</span> <span class="n">getMobileNumber</span><span class="o">(</span><span class="n">user</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span>
+  <span class="o">}</span> <span class="k">yield</span> <span class="nc">Parcel</span><span class="o">(</span><span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="o">,</span> <span class="n">address</span><span class="o">,</span> <span class="n">mobileNumber</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div>
+
+<p>In words, the above logic is</p>
+
+<ol>
+<li>Fetch the <code>User</code> from a remote server</li>
+<li>When the result comes back, look up the address of the <code>User</code> on another remote server</li>
+<li>When we obtain the address from the remote server, look up the <code>mobileNumber</code> of the <code>User</code> in another remote server</li>
+</ol>
+
+<p>Future actually has a failiure mode as well (<code>Future.failiure(cause: Throwable)</code>) which causes the
+whole for comprehension to shortcircuit, but the type <code>Throwable</code> should indicate to you that we should
+be using this for exceptional cases (e.g. Unhandled exceptions).</p>
+
+<p>The two code snippets from using <code>Future</code> and <code>\/</code> shows you how monads are a great way to model
+chaining contexts.</p>
+
+<h2 id="combining-future-and">Combining Future and \/</h2>
+
+<p>That&rsquo;s cool and all, but what if I need to query a remote server and the user may or may not exist?
+The return type of my functions will look like Future[\/[SendParcelError, X]].</p>
+
+<p>Let&rsquo;s see what that looks like!</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">def</span> <span class="n">makeParcelMegaCorp</span><span class="o">(</span><span class="n">userId</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">\/</span><span class="o">[</span><span class="kt">SendParcelError</span>, <span class="kt">Parcel</span><span class="o">]]</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="k">import</span> <span class="nn">ParcelMakerMegaCorp._</span>
+  <span class="k">for</span> <span class="o">{</span>
+    <span class="n">userOrError</span><span class="k">:</span> <span class="kt">\/</span><span class="o">[</span><span class="kt">SendParcelError</span>, <span class="kt">User</span><span class="o">]</span> <span class="k">&lt;-</span> <span class="n">remote_getUser</span><span class="o">(</span><span class="n">userId</span><span class="o">)</span>
+    <span class="n">addressOrError</span><span class="k">:</span> <span class="kt">\/</span><span class="o">[</span><span class="kt">SendParcelError</span>, <span class="kt">String</span><span class="o">]</span> <span class="k">&lt;-</span> <span class="n">userOrError</span> <span class="k">match</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="o">\/-(</span><span class="n">user</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">remote_getAddress</span><span class="o">(</span><span class="n">user</span><span class="o">)</span>
+      <span class="k">case</span> <span class="o">-\/(</span><span class="n">error</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Future</span><span class="o">.</span><span class="n">successful</span><span class="o">(</span><span class="n">error</span><span class="o">.</span><span class="n">left</span><span class="o">)</span>
+    <span class="o">}</span>
+    <span class="n">mobileNumberOrError</span><span class="k">:</span> <span class="kt">\/</span><span class="o">[</span><span class="kt">SendParcelError</span>, <span class="kt">String</span><span class="o">]</span> <span class="k">&lt;-</span> <span class="n">userOrError</span> <span class="k">match</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="o">\/-(</span><span class="n">user</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">remote_getMobileNumber</span><span class="o">(</span><span class="n">user</span><span class="o">)</span>
+      <span class="k">case</span> <span class="o">-\/(</span><span class="n">error</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Future</span><span class="o">.</span><span class="n">successful</span><span class="o">(</span><span class="n">error</span><span class="o">.</span><span class="n">left</span><span class="o">)</span>
+    <span class="o">}</span>
+  <span class="o">}</span> <span class="k">yield</span> <span class="k">for</span> <span class="o">{</span>
+    <span class="n">user</span> <span class="k">&lt;-</span> <span class="n">userOrError</span>
+    <span class="n">address</span> <span class="k">&lt;-</span> <span class="n">addressOrError</span>
+    <span class="n">mobileNumber</span> <span class="k">&lt;-</span> <span class="n">mobileNumberOrError</span>
+  <span class="o">}</span> <span class="k">yield</span>  <span class="nc">Parcel</span><span class="o">(</span><span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="o">,</span> <span class="n">address</span><span class="o">,</span> <span class="n">mobileNumber</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div>
+
+<p>Ouch! That&rsquo;s pretty convoluted! Let&rsquo;s look at the our logic</p>
+
+<ol>
+<li>Fetch <code>User</code> from the remote server asynchronously</li>
+<li>Fetch <code>address</code> from the remote server asynchronously <strong>IF</strong> the <code>User</code> exists</li>
+<li>Fetch <code>mobileNumber</code> from the remote server asynchronously <strong>IF</strong> the both the <code>User</code> and their <code>address</code> is found</li>
+</ol>
+
+<p>In our code example above, we need to manually implement the shortcircuit logic with something like
+<code>case -\/(error) =&gt; Future.successful(error.left)</code>. This is because we couldn&rsquo;t really compose the <code>Future</code>
+and <code>\/</code> monad together by nesting them &ndash; We are still only working with the <code>Future</code> monad.</p>
+
+<h2 id="the-eithert-monad">The EitherT Monad</h2>
+
+<p>Let me introduce a little magic type called <code>EitherT</code> and wrap every <code>Future[\/[SendParcelError, Parcel]]</code> we have with
+<code>EitherT.apply</code>:</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">def</span> <span class="n">makeParcelMegaCorp_improved</span><span class="o">(</span><span class="n">userId</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">\/</span><span class="o">[</span><span class="kt">SendParcelError</span>, <span class="kt">Parcel</span><span class="o">]]</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="k">import</span> <span class="nn">ParcelMakerMegaCorp._</span>
+  <span class="k">val</span> <span class="n">logicChain</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
+    <span class="n">user</span><span class="k">:</span> <span class="kt">User</span> <span class="kt">&lt;-</span> <span class="kt">EitherT</span><span class="o">(</span><span class="kt">remote_getUser</span><span class="o">(</span><span class="kt">userId</span><span class="o">))</span>
+    <span class="kt">address:</span> <span class="kt">String</span> <span class="kt">&lt;-</span> <span class="kt">EitherT</span><span class="o">(</span><span class="kt">remote_getAddress</span><span class="o">(</span><span class="kt">user</span><span class="o">))</span>
+    <span class="kt">mobileNumber:</span> <span class="kt">String</span> <span class="kt">&lt;-</span> <span class="kt">EitherT</span><span class="o">(</span><span class="kt">remote_getAddress</span><span class="o">(</span><span class="kt">user</span><span class="o">))</span>
+  <span class="o">}</span> <span class="k">yield</span> <span class="nc">Parcel</span><span class="o">(</span><span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="o">,</span> <span class="n">address</span><span class="o">,</span> <span class="n">mobileNumber</span><span class="o">)</span>
+  <span class="n">logicChain</span><span class="o">.</span><span class="n">run</span>
+<span class="o">}</span>
+</code></pre></div>
+
+<p>It compiles and the code looks much cleaner! <code>EitherT</code> successfully composed our <code>Future</code> and <code>\/</code> into so now the result we &ldquo;pull out&rdquo; of
+our composed monad is just the <strong>right</strong>(<code>\/-</code>) value from an asynchoronous operation.</p>
+
+<p>Let&rsquo;s look at the behaviour of our combined monad more carefully:</p>
+
+<ol>
+<li>When the <code>Future</code> completes, check that it has not failed (i.e. no exception happened)</li>
+<li>Check that the <code>\/</code> is the <code>\/-</code> (&ldquo;right&rdquo;) side</li>
+</ol>
+
+<p>Here&rsquo;s an ASCII diagram showing this logic</p>
+
+<pre><code>         Future              \/
+         --------       -----------
+                        \/-(result)   ----&gt;  result (continue with the for comprehension with this value)
+                      /   
+                     /
+         Success ---
+       /             \
+      /               \ 
+    -                   -\/(error)    ----&gt;  shortcircuits with a Future.successful(-\/(error))
+      \
+       \
+         Failure                      ----&gt;  shortcircuits with a Future.failed(Throwable)
+</code></pre>
+
+<p>Cool, but how does this actually work?!</p>
+
+<p>the <code>logicChain</code> variable from our code snippet above is of the type <code>EitherT[Future, SendParcelError, Parcel]</code>.
+Weird.. Let&rsquo;s dig deeper!</p>
+
+<p>The <a href="https://github.com/scalaz/scalaz/blob/series/7.3.x/core/src/main/scala/scalaz/EitherT.scala#L16">definition</a> of EitherT tells us that <strong>it is just a newtype wrapper around its underlying combined monads</strong>:</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">final</span> <span class="k">case</span> <span class="k">class</span> <span class="nc">EitherT</span><span class="o">[</span><span class="kt">F</span><span class="o">[</span><span class="k">_</span><span class="o">]</span>, <span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="n">run</span><span class="k">:</span> <span class="kt">F</span><span class="o">[</span><span class="kt">A</span> <span class="kt">\/</span> <span class="kt">B</span><span class="o">])</span>
+
+<span class="c1">// Substituting in Future as F, and renaming &quot;run&quot; into</span>
+<span class="c1">// &quot;underlyingMonads&quot; for clarity</span>
+<span class="k">final</span> <span class="k">case</span> <span class="k">class</span> <span class="nc">EitherT</span><span class="o">[</span><span class="kt">Future</span>, <span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="n">underlyingMonads</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">A</span> <span class="kt">\/</span> <span class="kt">B</span><span class="o">])</span>
+</code></pre></div>
+
+<p>To make it more clear what <code>EitherT</code> is doing, let&rsquo;s look at the <code>map</code> method:</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">C</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">C</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">F</span><span class="k">:</span> <span class="kt">Functor</span><span class="o">[</span><span class="kt">F</span><span class="o">])</span><span class="k">:</span> <span class="kt">EitherT</span><span class="o">[</span><span class="kt">F</span>, <span class="kt">A</span>, <span class="kt">C</span><span class="o">]</span> <span class="k">=</span>
+  <span class="nc">EitherT</span><span class="o">(</span><span class="n">F</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">run</span><span class="o">)(</span><span class="k">_</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">f</span><span class="o">)))</span>
+
+<span class="cm">/* Substitute Future in, keeping in mind that run == underlyingMonads == Future[A \/ B] */</span>
+<span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">C</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">C</span><span class="o">)</span><span class="k">:</span> <span class="kt">EitherT</span><span class="o">[</span><span class="kt">Future</span>, <span class="kt">A</span>, <span class="kt">C</span><span class="o">]</span> <span class="k">=</span> 
+  <span class="nc">EitherT</span><span class="o">(</span>
+    <span class="n">underlyingMonads</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="n">either</span><span class="k">:</span> <span class="kt">\/</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">]</span> <span class="k">=&gt;</span> 
+      <span class="n">either</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+    <span class="o">}</span>
+  <span class="o">)</span>
+</code></pre></div>
+
+<p>So essentially what <code>map</code> method of <code>EitherT</code> does is first calls <code>map</code> on the future to get the <code>\/</code> result,
+then calling <code>map</code> on it again and transform the right side of the <code>\/</code> using function <code>f</code>. Finally it wraps the
+future back into the <code>EitherT</code> newtype wrapper.</p>
+
+<p>It does similar things for methods like <code>flatMap</code>, <code>filter</code>, <code>withFilter</code>, which is what allows it to be
+used in Scala&rsquo;s for comprehension.</p>
+
+<p>The reason why EitherT (T stands for Transformers) is so useful is that it can transform any monad <code>F</code>:</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="nc">EitherT</span><span class="o">[</span><span class="kt">Option</span>, <span class="kt">A</span>, <span class="kt">B</span><span class="o">]</span> <span class="c1">// underlying monad is Option[A \/ B]</span>
+<span class="nc">EitherT</span><span class="o">[</span><span class="kt">List</span>, <span class="kt">A</span>, <span class="kt">B</span><span class="o">]</span> <span class="c1">// underlying monad is List[A \/ B]</span>
+</code></pre></div>
+
+<p>There are other transformers like OptionT and ListT too!</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="nc">ListT</span><span class="o">[</span><span class="kt">Option</span>, <span class="kt">A</span><span class="o">]</span> <span class="c1">// underlying monad is Option[List[A]]</span>
+</code></pre></div>
+
+<p>More importantly, since a Monad Transformer is also a monad itself, you can stack up monad transformers.
+Although doing this in Scala is a bit more painful than Haskell when you have monads like <code>\/</code> which has
+more than one type parameter.</p>
+
+<h2 id="extra-tips">Extra Tips</h2>
+
+<p>Often you will find yourself having some operations that does not have the same type as your transformer.
+In this case, you will need to find a way to &ldquo;lift&rdquo; your value into your transformer type.</p>
+
+<p>In our example, checking that the <code>User</code> has an address may not require a remote server call if the <code>User</code> class
+contains their address as one of the fields. In this case the function that does the checking will have a signature
+like this:</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">def</span> <span class="n">checkUserHasAddress</span><span class="o">(</span><span class="n">user</span><span class="k">:</span> <span class="kt">User</span><span class="o">)</span><span class="k">:</span> <span class="kt">\/</span><span class="o">[</span><span class="kt">SendParcelError</span>, <span class="kt">Unit</span><span class="o">]</span>
+</code></pre></div>
+
+<p>In this case, <code>EitherT.fromEither</code> will &lsquo;inject&rsquo; your pure <code>\/</code> into a <code>Future</code></p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">for</span> <span class="o">{</span>
+  <span class="c1">// ...</span>
+  <span class="n">user</span> <span class="k">&lt;-</span> <span class="c1">// ...</span>
+  <span class="k">_</span>    <span class="k">&lt;-</span> <span class="nc">EitherT</span><span class="o">.</span><span class="n">fromEither</span><span class="o">(</span><span class="n">checkUserHasAddress</span><span class="o">(</span><span class="n">user</span><span class="o">))</span>
+  <span class="c1">// ...</span>
+<span class="o">}</span>
+</code></pre></div>
+
+<p>For cases where you have a function that returns <code>Future[A]</code>, then you can use <code>EitherT.right</code> or <code>EitherT.left</code>
+to lift it to your monad transformer stack.</p>
+<div class="highlight"><pre><code class="language-scala" data-lang="scala"><span></span><span class="k">for</span> <span class="o">{</span>
+  <span class="c1">// ...</span>
+  <span class="n">address</span> <span class="k">&lt;-</span> <span class="c1">// ...</span>
+  <span class="c1">// getPostCode has the type Future[A]</span>
+  <span class="n">postCode</span> <span class="k">&lt;-</span> <span class="nc">EitherT</span><span class="o">.</span><span class="n">right</span><span class="o">(</span><span class="n">getPostCode</span><span class="o">(</span><span class="n">address</span><span class="o">))</span>
+  <span class="c1">// EitherT.right takes a Future[A] and turns it into a EitherT[Future, Nothing, A]</span>
+<span class="o">}</span>
+</code></pre></div>
+
+<p>It is highly beneficial to read through Scalaz&rsquo;s documentation (better, the source code) and see what helper
+functions are available. In general, whatever you can do with a <code>\/</code>, there is an equivalent for <code>EitherT</code>.
+For other transformers such as <code>OptionT</code> and <code>ListT</code> there will be various helper functions too.</p>
+
+<h2 id="final-words">Final Words</h2>
+
+<p>We looked at how monads transformers can be useful for composing two monads together.
+At work I find myself using a lot of <code>EitherT[Future, A, B]</code> to model asynchronous operations that can fail,
+and chaining them together is a breeze, abstracting over the fact that each operation is asynchronous and
+can fail.</p>
+
+<p>Also at this point in time I am looking to gradually migrate from Scala&rsquo;s built-in <code>Future</code> to Scalaz&rsquo;s <code>Task</code>,
+which from my various research seems to yield better performance and safety. (It is very similar to Haskell&rsquo;s
+<code>IO</code> monad, but the API is more focused on dealing with multithreading and asynchronicity)</p>
+
+<p>The source code for this example can be found <a href="https://github.com/jtcwang/eg-scala-monad-transformers">Here</a> (Using Scalaz version 7.2. If your project is using an earlier version
+you may need to add <code>scalaz-contrib</code> to your dependencies to get the <code>Monad</code> instance of Scala&rsquo;s <code>Future</code> with
+<code>import scalaz.contrib.std.scalaFuture._</code>)</p>
+
+<p>If you find any errors or think I can improve my post in certain ways, please send me an email! I would
+love to keep this up to date.</p>
+</div>
+
+    
+    
+
+    
+
+    
+
+        <h4 class="page-header">Comments</h4>
+
+        <div id="disqus_thread"></div>
+<script>
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "jatcwang" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+    
+
+</main>
+
+        <footer>
+
+            <p class="copyright text-muted">&copy; All rights reserved.</p>
+
+        </footer>
+       
+    </body>
+
+</html>
+
